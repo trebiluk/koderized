@@ -1,0 +1,6 @@
+# Optional standalone Pages project.
+# Preferred classroom host: https://tw.kulibert.net/koderized/
+# Desired custom domain: koderized.kulibert.net on kulibert-desk.
+name = "koderized"
+compatibility_date = "2026-09-13"
+pages_build_output_dir = "."
