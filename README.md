@@ -1,10 +1,13 @@
-# Koderized KZ 1.5.0
+# Koderized KZ 1.11.0
 
 Chromebook coding arena for Solvay Middle School Technology Education
 (NYS MST Standard 5 · ITEEA STL · CTE connections).
 
 Alias + class code only. Freeze / Spotlight / Restore. No student accounts
 (Ed Law 2-d / FERPA). Formerly Coderized.
+
+KZ 1.11.0 classroom cut: one play board, clue chips (no “Locked ·” prefix),
+fat ≥44px mode tabs, prove card docked under the board. EN / ES / Big words stay.
 
 ## Classroom URL
 
