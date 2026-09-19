@@ -582,6 +582,10 @@ function renderStudent() {
   setTxt("door-idea", loc.idea);
   renderChoices(d, s);
   const walk = s.mode === "walk";
+  if ($("guide")) {
+    const hideGuide = !walk && s.phase === "predict" && s.help !== "aide";
+    $("guide").classList.toggle("hidden", hideGuide);
+  }
   if ($("phase-chips")) $("phase-chips").classList.toggle("hidden", walk);
   if ($("btn-aide")) $("btn-aide").setAttribute("aria-pressed", s.help === "aide" ? "true" : "false");
   if ($("btn-walk")) $("btn-walk").setAttribute("aria-pressed", walk ? "true" : "false");

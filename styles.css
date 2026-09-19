@@ -150,7 +150,7 @@ input { width: 100%; border: 2px solid var(--line); border-radius: 8px; padding:
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 1 1 44px;
+  flex: 0 1 auto;
   border-radius: 12px;
 }
 .play { display: flex; flex-direction: column; gap: 10px; }
@@ -270,6 +270,10 @@ canvas#world {
 }
 @media (max-width: 520px) {
   .kpis { grid-template-columns: repeat(2, 1fr); }
+  .heat-track { display: none; }
+  .card { padding: 12px; }
+  .quest-bar { gap: 6px; }
+  .mode-tabs { margin: 2px 0 6px; }
 }
 @media (max-height: 800px) {
   .wrap { padding: 10px 16px; }
