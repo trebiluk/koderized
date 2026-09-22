@@ -84,6 +84,21 @@ body.big-type h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); }
   padding: 10px 14px; margin: 0 0 12px;
 }
 .guide-copy { flex: 1; min-width: 160px; }
+.btn.speak {
+  min-width: 44px; min-height: 44px; padding: 8px 12px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  background: var(--gold); color: var(--navy-2); flex-shrink: 0;
+}
+.btn.speak.on { background: var(--navy); color: #fff; }
+.btn.speak .picto-svg { width: 22px; height: 22px; }
+.idea-row { display: flex; align-items: center; gap: 8px; }
+.idea-row .hint { margin: 0; flex: 1; }
+#door-idea.speaking, .guide-line.speaking, .guide-sub.speaking {
+  background: rgba(224, 180, 90, .22);
+  border-radius: 6px;
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
 .guide-kicker { margin: 0; font-size: 12px; font-weight: 800; color: var(--gold); text-transform: uppercase; }
 .guide-line { margin: 2px 0 0; font-size: clamp(1.15rem, 3vw, 1.5rem); font-weight: 900; color: #fff; }
 .guide-ex { text-align: center; }

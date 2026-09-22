@@ -1,4 +1,4 @@
-/* Koderized KZ 1.11.0 — one board · clue chips · fat tabs. Pictograms, short EN/ES. No IEP stored. */
+/* Koderized KZ 1.12.0 — Speak beside the line. Not red until GO. One board. No IEP stored. */
 const DOORS = [
   {
     id: "zero",
@@ -189,6 +189,7 @@ function applyChrome() {
   if ($("btn-lang-en")) $("btn-lang-en").setAttribute("aria-pressed", lang() === "en" ? "true" : "false");
   if ($("btn-lang-es")) $("btn-lang-es").setAttribute("aria-pressed", lang() === "es" ? "true" : "false");
   if ($("btn-big")) $("btn-big").setAttribute("aria-pressed", localStorage.getItem("kz-big") === "1" ? "true" : "false");
+  syncSpeakBtn();
 }
 function doorL(d) {
   const pack = (L().doors && L().doors[d.id]) || {};
@@ -217,7 +218,7 @@ function walkHint(s) {
   const d = doorOf(s.door);
   const loc = doorL(d);
   const p = s.program || [];
-  const ready = s.tests && s.tests[0] && s.tests[1];
+  const ready = !!(s.ran && s.tests && s.tests[0] && s.tests[1]);
   const pack = L();
   const tapMove = pack.move || "move";
   const tapGo = pack.go || "GO";
@@ -349,6 +350,7 @@ function openDoor(s, id) {
   s.phase = "predict";
   s.tradeoff = "";
   s.status = "gray";
+  s.ran = false;
   s.lastChange = "Door " + d.n;
 }
 function ensure(st, alias, id) {
@@ -431,7 +433,10 @@ function draw(canvas, sim) {
   ctx.fillStyle = "#0b1c33"; ctx.fillRect(0, 0, W, H);
 }
 
-function goLanding() { hide("screen-student"); hide("screen-teacher"); show("screen-landing"); applyChrome(); }
+function goLanding() {
+  if (window.KZSpeak) KZSpeak.stop();
+  hide("screen-student"); hide("screen-teacher"); show("screen-landing"); applyChrome();
+}
 function goStudent() { hide("screen-landing"); hide("screen-teacher"); show("screen-student"); renderStudent(); }
 function goTeacher() { hide("screen-landing"); hide("screen-student"); show("screen-teacher"); renderTeacher(); }
 $("btn-student").onclick = () => {
@@ -465,12 +470,53 @@ function label(b) {
   if (b.t === "if-wall-score") return pack.score || "if wall: score +1";
   return b.t;
 }
-function bump(s) {
+function bump(s, fromGo) {
   const ev = evaluate(s.program, s);
   s.tests = ev.tests.map(t => t.ok);
   const pass = ev.tests.filter(t => t.ok).length;
-  s.status = pass >= 2 ? "green" : (!s.predicted ? "gray" : pass === 0 ? "red" : "amber");
+  if (typeof s.ran !== "boolean") s.ran = s.status === "green" || s.status === "red" || s.status === "amber";
+  if (fromGo) s.ran = true;
+  // Grade only after GO. An edit is not a red kid, and Undo must not keep the answer.
+  if (!s.ran) {
+    if (s.status !== "blue") s.status = "gray";
+    return;
+  }
+  s.status = pass >= 2 ? "green" : pass === 0 ? "red" : "amber";
   if (pass >= 2) s.lastGreen = copy(s.program);
+}
+function plain(el) {
+  return ((el && el.textContent) || "").replace(/\s+/g, " ").trim();
+}
+function guideSpeech() {
+  const bits = [];
+  function add(el) {
+    const t = plain(el);
+    if (t && bits.indexOf(t) === -1) bits.push(t);
+  }
+  add($("door-idea"));
+  const guide = $("guide");
+  if (guide && !guide.classList.contains("hidden")) {
+    add($("guide-line"));
+    add($("guide-sub"));
+  }
+  return bits.join(". ");
+}
+function syncSpeakBtn() {
+  const b = $("btn-speak");
+  if (!b) return;
+  const on = !!(window.KZSpeak && KZSpeak.speaking());
+  const pack = L();
+  b.classList.toggle("on", on);
+  b.setAttribute("aria-pressed", on ? "true" : "false");
+  const lab = $("speak-label");
+  if (lab) lab.textContent = on ? (pack.stopSpeak || "Stop") : (pack.speak || "Speak");
+  const said = on ? guideSpeech() : "";
+  ["door-idea", "guide-line", "guide-sub"].forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    const t = plain(el);
+    el.classList.toggle("speaking", !!(on && t && said.indexOf(t) !== -1));
+  });
 }
 function chips(phase) {
   ["predict", "run", "investigate", "modify", "make"].forEach(p => {
@@ -604,7 +650,7 @@ function renderStudent() {
   $("probe-wrap").classList.toggle("hidden", walk || s.phase !== "investigate");
   if ($("btn-predict")) $("btn-predict").parentElement.classList.toggle("hidden", walk);
   $("modify-wrap").classList.toggle("hidden", !(s.phase === "modify" || s.phase === "make"));
-  const ready = s.tests && s.tests[0] && s.tests[1];
+  const ready = !!(s.ran && s.tests && s.tests[0] && s.tests[1]);
   $("trade-wrap").classList.toggle("hidden", !ready || !(s.phase === "modify" || s.phase === "make"));
   const last = d.n === 5;
   if ($("cost-fields")) $("cost-fields").classList.toggle("hidden", d.n < 4);
@@ -627,7 +673,7 @@ function renderStudent() {
   $("tests").className = "clue-chips";
   ev.tests.forEach((t, i) => {
     const lab = (loc.tests && loc.tests[i]) || t.label;
-    const revealed = walk || s.phase !== "predict";
+    const revealed = !!who.ran;
     const chip = document.createElement("div");
     chip.className = "clue-chip " + (revealed ? (t.ok ? "pass" : "fail") : "pending");
     chip.setAttribute("aria-label", revealed ? ((t.ok ? "Yes. " : "No. ") + lab) : lab);
@@ -639,6 +685,8 @@ function renderStudent() {
   });
   glow(hint.id, hint.poke);
   renderGuide(s, d, loc, hint);
+  if (window.KZSpeak && KZSpeak.speaking() && KZSpeak.current() !== guideSpeech()) KZSpeak.stop();
+  syncSpeakBtn();
 }
 $("choices").onclick = e => {
   const b = e.target.closest(".choice");
@@ -692,7 +740,7 @@ function addBlock(t, n) {
   s.lastChange = "Added " + label(b);
   log(st, s.alias, "MODIFY", s.lastChange);
   bump(s);
-  if (s.tests[0] && s.tests[1]) s.phase = "make";
+  if (s.ran && s.tests[0] && s.tests[1]) s.phase = "make";
   save(st); renderStudent();
 }
 $("pal-move").onclick = () => addBlock("move");
@@ -703,7 +751,8 @@ $("pal-score").onclick = () => addBlock("if-wall-score");
 $("btn-run-mine").onclick = () => {
   const st = load(session.code);
   const s = st.students[session.id];
-  bump(s);
+  bump(s, true);
+  if (s.tests[0] && s.tests[1]) s.phase = "make";
   log(st, s.alias, "RUN", "Tests " + s.tests.filter(Boolean).length + "/3");
   save(st); renderStudent();
 };
@@ -865,6 +914,12 @@ if ($("btn-lang-es")) $("btn-lang-es").onclick = () => setLang("es");
 if ($("btn-big")) $("btn-big").onclick = () => {
   localStorage.setItem("kz-big", localStorage.getItem("kz-big") === "1" ? "0" : "1");
   applyChrome();
+};
+if ($("btn-speak")) $("btn-speak").onclick = () => {
+  if (!window.KZSpeak || !KZSpeak.supported()) return;
+  if (KZSpeak.speaking()) { KZSpeak.stop(); syncSpeakBtn(); return; }
+  KZSpeak.speak(guideSpeech(), lang(), syncSpeakBtn);
+  syncSpeakBtn();
 };
 if ($("btn-aide")) $("btn-aide").onclick = () => {
   const st = load(session.code);
